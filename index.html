@@ -1,45 +1,183 @@
 <!DOCTYPE html>
 <html lang="ja">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My YouTube Channel</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ログイン | サンプルアプリ</title>
     <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      }
+
       body {
-        font-family: Arial, sans-serif;
         margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #4f46e5, #9333ea);
       }
-      header {
-        background-color: #ff0000;
+
+      .card {
+        width: min(420px, 90%);
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 18px;
+        padding: 32px;
+        box-shadow: 0 20px 45px rgba(31, 41, 55, 0.25);
+        color: #1f2937;
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 1.8rem;
+        text-align: center;
+      }
+
+      p.description {
+        text-align: center;
+        color: #6b7280;
+        margin-bottom: 24px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        font-size: 1rem;
+        margin-bottom: 18px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      }
+
+      button {
+        width: 100%;
+        padding: 12px 16px;
+        background: #4f46e5;
         color: white;
-        padding: 20px;
-        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 600;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
       }
-      .content {
-        padding: 20px;
-        text-align: center;
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 20px rgba(79, 70, 229, 0.25);
+        background: #4338ca;
       }
-      iframe {
-        width: 560px;
-        height: 315px;
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .status {
+        margin-top: 18px;
+        min-height: 1.5em;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .status.success {
+        color: #059669;
+      }
+
+      .status.error {
+        color: #dc2626;
+      }
+
+      footer {
+        margin-top: 24px;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #9ca3af;
+      }
+
+      footer code {
+        background: rgba(79, 70, 229, 0.1);
+        padding: 2px 6px;
+        border-radius: 6px;
+        color: #4338ca;
       }
     </style>
   </head>
   <body>
+    <main class="card">
+      <h1>ようこそ！</h1>
+      <p class="description">デモ用アカウントでログインしてみましょう。</p>
+      <form id="login-form">
+        <label for="username">ユーザー名</label>
+        <input id="username" name="username" type="text" autocomplete="username" required />
 
-    <!-- ヘッダー部分 -->
-    <header>
-      <h1>My YouTube Channel</h1>
-      <p>Welcome to my YouTube channel!</p>
-    </header>
+        <label for="password">パスワード</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
 
-    <!-- YouTubeの最新動画埋め込み -->
-    <div class="content">
-      <h2>Check out my latest video!</h2>
-      <iframe src="https://www.youtube.com/embed/動画ID" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
+        <button type="submit">ログイン</button>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <footer>
+        デモアカウント: <code>demo / demo123</code>, <code>admin / secret</code>
+      </footer>
+    </main>
 
+    <script>
+      const form = document.getElementById("login-form");
+      const statusEl = document.getElementById("status");
+      const button = form.querySelector("button");
+
+      async function submitLogin(event) {
+        event.preventDefault();
+        statusEl.textContent = "ログイン中...";
+        statusEl.className = "status";
+        button.disabled = true;
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+          const response = await fetch("http://127.0.0.1:5000/api/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "ログインに失敗しました。");
+          }
+
+          statusEl.textContent = `${data.displayName} さん、ようこそ！`;
+          statusEl.className = "status success";
+          form.reset();
+        } catch (error) {
+          statusEl.textContent = error.message;
+          statusEl.className = "status error";
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      form.addEventListener("submit", submitLogin);
+    </script>
   </body>
 </html>
